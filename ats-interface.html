@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS Multi-Agent System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- Load React -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Main Application -->
+    <script>
+        const { useState, createElement: h } = React;
+        const { render } = ReactDOM;
+
+        // SVG Icon Components
+        const Icon = ({ d, className = "w-6 h-6" }) => 
+            h('svg', { className, fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" },
+                h('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d })
+            );
+
+        const Upload = () => h(Icon, { 
+            className: "w-12 h-12 text-gray-400 mx-auto",
+            d: "M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" 
+        });
+
+        const FileText = ({ className = "w-6 h-6" }) => h(Icon, { 
+            className,
+            d: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
+        });
+
+        const Zap = ({ className = "w-5 h-5" }) => h(Icon, { 
+            className,
+            d: "M13 10V3L4 14h7v7l9-11h-7z" 
+        });
+
+        const CheckCircle = ({ className = "w-8 h-8" }) => h(Icon, { 
+            className,
+            d: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" 
+        });
+
+        const AlertCircle = ({ className = "w-8 h-8" }) => h(Icon, { 
+            className,
+            d: "M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+        });
+
+        const XCircle = ({ className = "w-8 h-8" }) => h(Icon, { 
+            className,
+            d: "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" 
+        });
+
+        const Settings = ({ className = "w-5 h-5" }) => h(Icon, { 
+            className,
+            d: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" 
+        });
+
+        const TrendingUp = ({ className = "w-6 h-6" }) => h(Icon, { 
+            className,
+            d: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" 
+        });
+
+        // Main App Component
+        function ATSInterface() {
+            const [apiUrl, setApiUrl] = useState('https://abhorrently-threadless-reina.ngrok-free.dev');
+            const [apiKey, setApiKey] = useState('secret123');
+            const [jobDescription, setJobDescription] = useState('');
+            const [cvText, setCvText] = useState('');
+            const [file, setFile] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [result, setResult] = useState(null);
+            const [error, setError] = useState(null);
+            const [activeTab, setActiveTab] = useState('text');
+            const [showConfig, setShowConfig] = useState(false);
+
+            const handleFileChange = (e) => {
+                const selectedFile = e.target.files[0];
+                if (selectedFile) {
+                    const validTypes = ['.pdf', '.docx', '.txt'];
+                    const ext = selectedFile.name.substring(selectedFile.name.lastIndexOf('.')).toLowerCase();
+                    if (validTypes.includes(ext)) {
+                        setFile(selectedFile);
+                        setError(null);
+                    } else {
+                        setError('Please upload a PDF, DOCX, or TXT file');
+                        setFile(null);
+                    }
+                }
+            };
+
+            const analyzeText = async () => {
+                if (!jobDescription || !cvText) {
+                    setError('Please provide both job description and CV text');
+                    return;
+                }
+
+                setLoading(true);
+                setError(null);
+
+                try {
+                    const response = await fetch(`${apiUrl}/api/analyze`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            job_description: jobDescription,
+                            cv_text: cvText
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.status} - Make sure your backend is running!`);
+                    }
+
+                    const data = await response.json();
+                    setResult(data);
+                } catch (err) {
+                    setError(err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const analyzeFile = async () => {
+                if (!jobDescription || !file) {
+                    setError('Please provide both job description and CV file');
+                    return;
+                }
+
+                setLoading(true);
+                setError(null);
+
+                try {
+                    const formData = new FormData();
+                    formData.append('job_description', jobDescription);
+                    formData.append('cv_file', file);
+
+                    const response = await fetch(`${apiUrl}/api/analyze-file`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.status} - Make sure your backend is running!`);
+                    }
+
+                    const data = await response.json();
+                    setResult(data);
+                } catch (err) {
+                    setError(err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const getDecisionIcon = (decision) => {
+                switch(decision?.toLowerCase()) {
+                    case 'pass':
+                        return h(CheckCircle, { className: "w-8 h-8 text-green-500" });
+                    case 'borderline':
+                        return h(AlertCircle, { className: "w-8 h-8 text-yellow-500" });
+                    case 'reject':
+                        return h(XCircle, { className: "w-8 h-8 text-red-500" });
+                    default:
+                        return null;
+                }
+            };
+
+            const getScoreColor = (score) => {
+                if (score >= 75) return 'text-green-600';
+                if (score >= 60) return 'text-yellow-600';
+                return 'text-red-600';
+            };
+
+            return h('div', { className: "min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100" },
+                // Header
+                h('header', { className: "bg-white shadow-md" },
+                    h('div', { className: "max-w-7xl mx-auto px-6 py-4 flex justify-between items-center" },
+                        h('div', { className: "flex items-center gap-3" },
+                            h(Zap, { className: "w-8 h-8 text-indigo-600" }),
+                            h('h1', { className: "text-2xl font-bold text-gray-800" }, 'ATS Multi-Agent System')
+                        ),
+                        h('button', {
+                            onClick: () => setShowConfig(!showConfig),
+                            className: "flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                        },
+                            h(Settings, { className: "w-5 h-5" }),
+                            h('span', {}, 'Config')
+                        )
+                    )
+                ),
+
+                // Main Content
+                h('div', { className: "max-w-7xl mx-auto px-6 py-8" },
+                    // Config Panel
+                    showConfig && h('div', { className: "bg-white rounded-xl shadow-lg p-6 mb-6" },
+                        h('h2', { className: "text-xl font-semibold mb-4" }, 'API Configuration'),
+                        h('div', { className: "grid md:grid-cols-2 gap-4" },
+                            h('div', {},
+                                h('label', { className: "block text-sm font-medium text-gray-700 mb-2" }, 'API URL'),
+                                h('input', {
+                                    type: "text",
+                                    value: apiUrl,
+                                    onChange: (e) => setApiUrl(e.target.value),
+                                    className: "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent",
+                                    placeholder: "https://your-ngrok-url.ngrok-free.dev"
+                                })
+                            ),
+                            h('div', {},
+                                h('label', { className: "block text-sm font-medium text-gray-700 mb-2" }, 'API Key'),
+                                h('input', {
+                                    type: "text",
+                                    value: apiKey,
+                                    onChange: (e) => setApiKey(e.target.value),
+                                    className: "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent",
+                                    placeholder: "secret123"
+                                })
+                            )
+                        )
+                    ),
+
+                    // Two Column Layout
+                    h('div', { className: "grid lg:grid-cols-2 gap-6" },
+                        // Left Column - Input
+                        h('div', { className: "bg-white rounded-xl shadow-lg p-6" },
+                            h('h2', { className: "text-xl font-semibold mb-4 flex items-center gap-2" },
+                                h(FileText, { className: "w-6 h-6 text-indigo-600" }),
+                                'Input Details'
+                            ),
+
+                            // Job Description
+                            h('div', { className: "mb-6" },
+                                h('label', { className: "block text-sm font-medium text-gray-700 mb-2" }, 'Job Description *'),
+                                h('textarea', {
+                                    value: jobDescription,
+                                    onChange: (e) => setJobDescription(e.target.value),
+                                    className: "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent h-40",
+                                    placeholder: "Paste the job description here..."
+                                })
+                            ),
+
+                            // Tab Selection
+                            h('div', { className: "flex gap-2 mb-4" },
+                                h('button', {
+                                    onClick: () => setActiveTab('text'),
+                                    className: `flex-1 py-2 px-4 rounded-lg transition-colors ${
+                                        activeTab === 'text' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`
+                                }, 'Text Input'),
+                                h('button', {
+                                    onClick: () => setActiveTab('file'),
+                                    className: `flex-1 py-2 px-4 rounded-lg transition-colors ${
+                                        activeTab === 'file' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`
+                                }, 'File Upload')
+                            ),
+
+                            // CV Input
+                            activeTab === 'text' ?
+                                h('div', { className: "mb-6" },
+                                    h('label', { className: "block text-sm font-medium text-gray-700 mb-2" }, 'CV/Resume Text *'),
+                                    h('textarea', {
+                                        value: cvText,
+                                        onChange: (e) => setCvText(e.target.value),
+                                        className: "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent h-64",
+                                        placeholder: "Paste the CV/resume text here..."
+                                    })
+                                )
+                            :
+                                h('div', { className: "mb-6" },
+                                    h('label', { className: "block text-sm font-medium text-gray-700 mb-2" }, 'CV/Resume File *'),
+                                    h('div', { className: "border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-500 transition-colors" },
+                                        h(Upload, {}),
+                                        h('input', {
+                                            type: "file",
+                                            onChange: handleFileChange,
+                                            accept: ".pdf,.docx,.txt",
+                                            className: "hidden",
+                                            id: "file-upload"
+                                        }),
+                                        h('label', {
+                                            htmlFor: "file-upload",
+                                            className: "cursor-pointer text-indigo-600 hover:text-indigo-700 font-medium"
+                                        }, 'Click to upload'),
+                                        h('p', { className: "text-gray-500 text-sm mt-2" }, 'PDF, DOCX, or TXT (max 10MB)'),
+                                        file && h('p', { className: "mt-4 text-sm text-green-600 font-medium" }, `✓ ${file.name}`)
+                                    )
+                                ),
+
+                            // Error
+                            error && h('div', { className: "mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700" }, error),
+
+                            // Analyze Button
+                            h('button', {
+                                onClick: activeTab === 'text' ? analyzeText : analyzeFile,
+                                disabled: loading,
+                                className: "w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            },
+                                loading ? [
+                                    h('div', { key: 'spinner', className: "animate-spin rounded-full h-5 w-5 border-b-2 border-white" }),
+                                    'Analyzing...'
+                                ] : [
+                                    h(Zap, { key: 'icon', className: "w-5 h-5" }),
+                                    'Analyze Resume'
+                                ]
+                            )
+                        ),
+
+                        // Right Column - Results
+                        h('div', { className: "bg-white rounded-xl shadow-lg p-6" },
+                            h('h2', { className: "text-xl font-semibold mb-4 flex items-center gap-2" },
+                                h(TrendingUp, { className: "w-6 h-6 text-indigo-600" }),
+                                'Analysis Results'
+                            ),
+
+                            !result ?
+                                h('div', { className: "text-center py-16 text-gray-400" },
+                                    h(FileText, { className: "w-16 h-16 mx-auto mb-4 opacity-50" }),
+                                    h('p', {}, 'Results will appear here after analysis')
+                                )
+                            :
+                                h('div', { className: "space-y-6" },
+                                    // Decision Card
+                                    h('div', { className: "bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-6" },
+                                        h('div', { className: "flex items-center justify-between mb-4" },
+                                            h('div', { className: "flex items-center gap-3" },
+                                                getDecisionIcon(result.decision),
+                                                h('div', {},
+                                                    h('h3', { className: "text-2xl font-bold capitalize" }, result.decision),
+                                                    h('p', { className: "text-gray-600" }, 'Overall Decision')
+                                                )
+                                            ),
+                                            h('div', { className: "text-right" },
+                                                h('div', { className: `text-4xl font-bold ${getScoreColor(result.overall_score)}` }, result.overall_score),
+                                                h('p', { className: "text-gray-600" }, 'Score')
+                                            )
+                                        ),
+                                        h('p', { className: "text-gray-700" }, result.summary)
+                                    ),
+
+                                    // Score Breakdown
+                                    h('div', {},
+                                        h('h3', { className: "font-semibold mb-3" }, 'Score Breakdown'),
+                                        h('div', { className: "space-y-3" },
+                                            ['skill_match_score', 'experience_score', 'title_similarity_score'].map((key, idx) => {
+                                                const labels = ['Skill Match', 'Experience', 'Title Similarity'];
+                                                const colors = ['bg-indigo-600', 'bg-green-600', 'bg-purple-600'];
+                                                return h('div', { key },
+                                                    h('div', { className: "flex justify-between mb-1" },
+                                                        h('span', { className: "text-sm" }, labels[idx]),
+                                                        h('span', { className: "text-sm font-medium" }, `${result.ats_score[key]}%`)
+                                                    ),
+                                                    h('div', { className: "w-full bg-gray-200 rounded-full h-2" },
+                                                        h('div', {
+                                                            className: `${colors[idx]} h-2 rounded-full transition-all`,
+                                                            style: { width: `${result.ats_score[key]}%` }
+                                                        })
+                                                    )
+                                                );
+                                            })
+                                        )
+                                    ),
+
+                                    // Matched Skills
+                                    result.ats_score.matched_skills?.length > 0 && h('div', {},
+                                        h('h3', { className: "font-semibold mb-2 text-green-700" }, '✓ Matched Skills'),
+                                        h('div', { className: "flex flex-wrap gap-2" },
+                                            result.ats_score.matched_skills.map((skill, idx) =>
+                                                h('span', {
+                                                    key: idx,
+                                                    className: "px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm"
+                                                }, skill)
+                                            )
+                                        )
+                                    ),
+
+                                    // Missing Skills
+                                    result.ats_score.missing_must_have?.length > 0 && h('div', {},
+                                        h('h3', { className: "font-semibold mb-2 text-red-700" }, '✗ Missing Required Skills'),
+                                        h('div', { className: "flex flex-wrap gap-2" },
+                                            result.ats_score.missing_must_have.map((skill, idx) =>
+                                                h('span', {
+                                                    key: idx,
+                                                    className: "px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm"
+                                                }, skill)
+                                            )
+                                        )
+                                    ),
+
+                                    // Improvement Checklist
+                                    h('div', {},
+                                        h('h3', { className: "font-semibold mb-3" }, 'Improvement Checklist'),
+                                        h('div', { className: "space-y-2" },
+                                            result.improvement_checklist.map((item, idx) =>
+                                                h('div', {
+                                                    key: idx,
+                                                    className: "flex items-start gap-2 p-3 bg-gray-50 rounded-lg"
+                                                },
+                                                    h('span', { className: "text-indigo-600 mt-0.5" }, '•'),
+                                                    h('span', { className: "text-sm text-gray-700" }, item)
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                        )
+                    )
+                )
+            );
+        }
+
+        // Render the app
+        render(h(ATSInterface), document.getElementById('root'));
+    </script>
+</body>
+</html>

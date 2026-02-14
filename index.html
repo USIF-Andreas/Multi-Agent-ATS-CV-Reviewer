@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS AI Agent - Dark Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Dark Gradient Background */
+        @keyframes gradient-xy {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animate-gradient-dark {
+            background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e293b);
+            background-size: 400% 400%;
+            animation: gradient-xy 15s ease infinite;
+        }
+
+        /* Entry Animations */
+        @keyframes slide-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+
+        @keyframes fill-bar { from { width: 0%; } }
+        .animate-fill { animation: fill-bar 1s ease-out forwards; }
+
+        /* Dark Glassmorphism */
+        .glass-panel-dark {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="antialiased text-slate-200 bg-slate-900">
+    <div id="root"></div>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <script>
+        const { useState, useEffect, createElement: h } = React;
+        const { render } = ReactDOM;
+
+        // --- ICONS ---
+        const Icon = ({ d, className = "w-6 h-6" }) => 
+            h('svg', { className, fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" },
+                h('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d })
+            );
+
+        const Upload = () => h(Icon, { d: "M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12", className: "w-12 h-12 text-indigo-400 mx-auto" });
+        const FileText = ({ className = "w-6 h-6" }) => h(Icon, { d: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", className });
+        const Zap = ({ className = "w-5 h-5" }) => h(Icon, { d: "M13 10V3L4 14h7v7l9-11h-7z", className });
+        const CheckCircle = ({ className = "w-8 h-8" }) => h(Icon, { d: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", className });
+        const AlertCircle = ({ className = "w-8 h-8" }) => h(Icon, { d: "M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z", className });
+        const XCircle = ({ className = "w-8 h-8" }) => h(Icon, { d: "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z", className });
+        const Settings = ({ className = "w-5 h-5" }) => h(Icon, { d: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z", className });
+        const TrendingUp = ({ className = "w-6 h-6" }) => h(Icon, { d: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6", className });
+        const Eye = ({ className = "w-5 h-5" }) => h(Icon, { d: "M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z", className });
+
+        // --- MAIN APP ---
+        function ATSInterface() {
+            const [apiUrl, setApiUrl] = useState('https://abhorrently-threadless-reina.ngrok-free.dev');
+            const [apiKey, setApiKey] = useState('secret123');
+            const [jobDescription, setJobDescription] = useState('');
+            const [cvText, setCvText] = useState('');
+            const [file, setFile] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [result, setResult] = useState(null);
+            const [error, setError] = useState(null);
+            const [activeTab, setActiveTab] = useState('text');
+            const [showConfig, setShowConfig] = useState(false);
+            const [isConnected, setIsConnected] = useState(false);
+
+            useEffect(() => {
+                const checkConnection = async () => {
+                    try {
+                        const response = await fetch(`${apiUrl}/`, { method: 'GET', signal: AbortSignal.timeout(5000) });
+                        setIsConnected(response.ok);
+                    } catch (e) { setIsConnected(false); }
+                };
+                checkConnection();
+                const interval = setInterval(checkConnection, 10000);
+                return () => clearInterval(interval);
+            }, [apiUrl]);
+
+            const handleFileChange = (e) => {
+                const selectedFile = e.target.files[0];
+                if (selectedFile) {
+                    const ext = selectedFile.name.substring(selectedFile.name.lastIndexOf('.')).toLowerCase();
+                    if (['.pdf', '.docx', '.txt'].includes(ext)) {
+                        setFile(selectedFile);
+                        setError(null);
+                    } else {
+                        setError('Supported formats: PDF, DOCX, TXT');
+                        setFile(null);
+                    }
+                }
+            };
+
+            const analyze = async (endpoint, body) => {
+                setLoading(true);
+                setError(null);
+                try {
+                    const headers = { 'Authorization': `Bearer ${apiKey}` };
+                    if (!(body instanceof FormData)) headers['Content-Type'] = 'application/json';
+                    
+                    const response = await fetch(`${apiUrl}${endpoint}`, { method: 'POST', headers, body });
+                    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                    const data = await response.json();
+                    setResult(data);
+                } catch (err) {
+                    setError(err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleAnalyze = () => {
+                if (!jobDescription) { setError('Job Description is required'); return; }
+                if (activeTab === 'text') {
+                    if (!cvText) { setError('CV Text is required'); return; }
+                    analyze('/api/analyze', JSON.stringify({ job_description: jobDescription, cv_text: cvText }));
+                } else {
+                    if (!file) { setError('CV File is required'); return; }
+                    const fd = new FormData();
+                    fd.append('job_description', jobDescription);
+                    fd.append('cv_file', file);
+                    analyze('/api/analyze-file', fd);
+                }
+            };
+
+            const getDecisionIcon = (decision) => {
+                switch(decision?.toLowerCase()) {
+                    case 'pass': return h(CheckCircle, { className: "w-12 h-12 text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]" });
+                    case 'borderline': return h(AlertCircle, { className: "w-12 h-12 text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.5)]" });
+                    case 'reject': return h(XCircle, { className: "w-12 h-12 text-rose-500 drop-shadow-[0_0_15px_rgba(244,63,94,0.5)]" });
+                    default: return null;
+                }
+            };
+
+            const getScoreColor = (score) => {
+                if (score >= 75) return 'text-emerald-400';
+                if (score >= 60) return 'text-amber-400';
+                return 'text-rose-500';
+            };
+
+            return h('div', { className: "min-h-screen animate-gradient-dark p-4 md:p-8 font-sans selection:bg-indigo-500 selection:text-white" },
+                
+                // --- FLOATING MODERN HEADER ---
+                h('div', { className: "max-w-7xl mx-auto mb-10 flex flex-col md:flex-row justify-between items-center glass-panel-dark rounded-full px-8 py-4 sticky top-6 z-50 transition-all hover:border-indigo-500/30" },
+                    h('div', { className: "flex items-center gap-4" },
+                        h('div', { className: "p-2 bg-indigo-600 rounded-xl shadow-[0_0_15px_rgba(79,70,229,0.5)]" },
+                            h(Zap, { className: "w-6 h-6 text-white" })
+                        ),
+                        h('div', {},
+                            h('h1', { className: "text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400" }, 'ATS Neural Core'),
+                            h('div', { className: "flex items-center gap-2 mt-0.5" },
+                                h('div', { className: `w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse' : 'bg-rose-500'}` }),
+                                h('span', { className: "text-[10px] uppercase tracking-widest font-semibold text-slate-400" }, isConnected ? 'System Online' : 'Connecting...')
+                            )
+                        )
+                    ),
+                    h('button', {
+                        onClick: () => setShowConfig(!showConfig),
+                        className: "mt-4 md:mt-0 flex items-center gap-2 px-5 py-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 hover:border-indigo-500 rounded-full transition-all text-sm font-medium text-slate-300"
+                    }, h(Settings, { className: "w-4 h-4" }), 'Configure')
+                ),
+
+                // --- MAIN GRID ---
+                h('div', { className: "max-w-7xl mx-auto grid lg:grid-cols-2 gap-8" },
+                    
+                    // --- LEFT: INPUT ---
+                    h('div', { className: "glass-panel-dark rounded-3xl p-6 md:p-8 h-fit animate-slide-up" },
+                        // Config Panel
+                        showConfig && h('div', { className: "mb-6 p-4 bg-slate-800/80 rounded-2xl border border-slate-700 animate-slide-up" },
+                            h('h3', { className: "text-xs font-bold uppercase tracking-wider text-slate-400 mb-3" }, "API Connection"),
+                            h('div', { className: "space-y-3" },
+                                h('input', { type: "text", value: apiUrl, onChange: (e) => setApiUrl(e.target.value), className: "w-full px-4 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-slate-300 focus:border-indigo-500 focus:outline-none", placeholder: "API URL" }),
+                                h('input', { type: "text", value: apiKey, onChange: (e) => setApiKey(e.target.value), className: "w-full px-4 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-slate-300 focus:border-indigo-500 focus:outline-none", placeholder: "API Key" })
+                            )
+                        ),
+
+                        h('h2', { className: "text-lg font-semibold text-slate-200 mb-6 flex items-center gap-2" },
+                            h(FileText, { className: "w-5 h-5 text-indigo-400" }), 'Input Data'
+                        ),
+
+                        // Inputs
+                        h('div', { className: "space-y-5" },
+                            h('div', {},
+                                h('label', { className: "block text-xs font-bold text-slate-400 uppercase mb-2 ml-1" }, "Job Description"),
+                                h('textarea', {
+                                    value: jobDescription,
+                                    onChange: (e) => setJobDescription(e.target.value),
+                                    className: "w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-slate-300 transition-all h-32 resize-none text-sm placeholder-slate-600",
+                                    placeholder: "Paste the full job description here..."
+                                })
+                            ),
+
+                            // Tabs
+                            h('div', { className: "bg-slate-800/50 p-1 rounded-xl flex border border-slate-700" },
+                                ['text', 'file'].map(tab => 
+                                    h('button', {
+                                        key: tab,
+                                        onClick: () => setActiveTab(tab),
+                                        className: `flex-1 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`
+                                    }, tab === 'text' ? 'Paste Resume' : 'Upload File')
+                                )
+                            ),
+
+                            activeTab === 'text' ? 
+                                h('textarea', {
+                                    value: cvText,
+                                    onChange: (e) => setCvText(e.target.value),
+                                    className: "w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-slate-300 h-48 resize-none text-sm placeholder-slate-600",
+                                    placeholder: "Paste resume content here..."
+                                }) :
+                                h('div', { className: "border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:border-indigo-500 hover:bg-slate-800/80 transition-all cursor-pointer group" },
+                                    h(Upload, { className: "w-10 h-10 text-slate-600 group-hover:text-indigo-400 transition-colors mx-auto mb-3" }),
+                                    h('input', { type: "file", onChange: handleFileChange, className: "hidden", id: "file-upload" }),
+                                    h('label', { htmlFor: "file-upload", className: "cursor-pointer" },
+                                        h('span', { className: "text-indigo-400 font-medium group-hover:text-indigo-300" }, "Click to upload"),
+                                        h('span', { className: "text-slate-500 block text-xs mt-1" }, file ? `Selected: ${file.name}` : "PDF, DOCX (Max 10MB)")
+                                    )
+                                ),
+
+                            error && h('div', { className: "p-3 bg-rose-900/30 border border-rose-800 text-rose-300 text-sm rounded-lg flex items-center gap-2" }, h(AlertCircle, { className: "w-4 h-4" }), error),
+
+                            h('button', {
+                                onClick: handleAnalyze,
+                                disabled: loading || !isConnected,
+                                className: "w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold shadow-[0_0_20px_rgba(79,70,229,0.3)] transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 border border-white/10"
+                            },
+                                loading ? [
+                                    h('div', { key: 'spin', className: "w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" }), 
+                                    'Running Agents...'
+                                ] : [
+                                    h(Zap, { key: 'zap', className: "w-5 h-5" }), 'Start Analysis'
+                                ]
+                            )
+                        )
+                    ),
+
+                    // --- RIGHT: RESULTS ---
+                    h('div', { className: "space-y-6" },
+                        !result ? 
+                            h('div', { className: "glass-panel-dark rounded-3xl p-12 text-center h-full flex flex-col justify-center items-center text-slate-500 animate-slide-up delay-100" },
+                                h('div', { className: "w-24 h-24 bg-slate-800/50 rounded-full flex items-center justify-center mb-6 border border-slate-700" },
+                                    h(TrendingUp, { className: "w-10 h-10 opacity-30" })
+                                ),
+                                h('p', { className: "font-medium text-lg text-slate-400" }, "Ready to analyze"),
+                                h('p', { className: "text-sm mt-2 opacity-60" }, "Results from 8 AI agents will appear here")
+                            ) :
+                            
+                            // Result Cards
+                            h('div', { className: "space-y-6" },
+                                
+                                // 1. Summary Card
+                                h('div', { className: "glass-panel-dark rounded-3xl p-8 relative overflow-hidden animate-slide-up" },
+                                    h('div', { className: "absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-cyan-500" }),
+                                    h('div', { className: "flex justify-between items-start mb-8" },
+                                        h('div', { className: "flex items-center gap-5" },
+                                            getDecisionIcon(result.decision),
+                                            h('div', {},
+                                                h('h2', { className: "text-4xl font-bold text-white tracking-tight" }, result.decision),
+                                                h('p', { className: "text-slate-400 font-medium text-sm" }, "Recommendation")
+                                            )
+                                        ),
+                                        h('div', { className: "text-right" },
+                                            h('div', { className: `text-6xl font-black tracking-tighter ${getScoreColor(result.overall_score)}` }, result.overall_score),
+                                            h('p', { className: "text-xs font-bold uppercase tracking-widest text-slate-500 mt-1" }, "ATS Score")
+                                        )
+                                    ),
+                                    h('div', { className: "bg-slate-800/50 p-5 rounded-2xl border border-slate-700/50" },
+                                        h('p', { className: "text-slate-300 leading-relaxed" }, result.summary)
+                                    )
+                                ),
+
+                                // 2. Visual Analysis
+                                result.visual_report && h('div', { className: "glass-panel-dark rounded-2xl p-6 animate-slide-up delay-100 border-l-4 border-l-cyan-500" },
+                                    h('h3', { className: "font-bold text-slate-200 mb-5 flex items-center gap-2" }, h(Eye, { className: "w-5 h-5 text-cyan-400" }), "Visual & Layout Audit"),
+                                    h('div', { className: "grid grid-cols-2 gap-4 mb-5" },
+                                        h('div', { className: "bg-slate-800/60 p-4 rounded-xl border border-slate-700" },
+                                            h('span', { className: "text-[10px] text-slate-500 block uppercase tracking-wider mb-1" }, "Skills Position"),
+                                            h('span', { className: "font-semibold text-cyan-300" }, result.visual_report.skills_position)
+                                        ),
+                                        h('div', { className: "bg-slate-800/60 p-4 rounded-xl border border-slate-700" },
+                                            h('span', { className: "text-[10px] text-slate-500 block uppercase tracking-wider mb-1" }, "Font Diversity"),
+                                            h('span', { className: "font-semibold text-cyan-300" }, `${result.visual_report.font_names?.length || 1} Types`)
+                                        )
+                                    ),
+                                    result.visual_report.issues?.length > 0 ? 
+                                        h('ul', { className: "space-y-2" },
+                                            result.visual_report.issues.map((iss, i) => h('li', { key: i, className: "text-xs text-rose-300 flex gap-2 bg-rose-900/20 p-2.5 rounded-lg border border-rose-900/30" }, h(AlertCircle, { className: "w-4 h-4 shrink-0" }), iss))
+                                        ) : h('p', { className: "text-sm text-emerald-400 flex gap-2" }, h(CheckCircle, { className: "w-4 h-4" }), "Layout is optimized.")
+                                ),
+
+                                // 3. Score Breakdown
+                                h('div', { className: "glass-panel-dark rounded-2xl p-6 animate-slide-up delay-200" },
+                                    h('h3', { className: "font-bold text-slate-200 mb-5" }, "Scoring Factors"),
+                                    h('div', { className: "space-y-5" },
+                                        [
+                                            { label: 'Keyword Match', val: result.ats_score.skill_match_score, color: 'bg-indigo-500' },
+                                            { label: 'Experience Depth', val: result.ats_score.experience_score, color: 'bg-emerald-500' },
+                                            { label: 'Title Relevance', val: result.ats_score.title_similarity_score, color: 'bg-cyan-500' }
+                                        ].map((item, idx) => 
+                                            h('div', { key: idx },
+                                                h('div', { className: "flex justify-between text-sm mb-2" },
+                                                    h('span', { className: "font-medium text-slate-400" }, item.label),
+                                                    h('span', { className: "font-bold text-slate-200" }, `${item.val}%`)
+                                                ),
+                                                h('div', { className: "w-full bg-slate-700 rounded-full h-2 overflow-hidden" },
+                                                    h('div', { className: `h-full rounded-full ${item.color} animate-fill shadow-[0_0_10px_currentColor]`, style: { width: `${item.val}%` } })
+                                                )
+                                            )
+                                        )
+                                    )
+                                ),
+
+                                // 4. Skills & Gaps
+                                h('div', { className: "grid md:grid-cols-2 gap-4 animate-slide-up delay-300" },
+                                    h('div', { className: "glass-panel-dark rounded-2xl p-5" },
+                                        h('h3', { className: "font-bold text-emerald-400 mb-4 text-xs uppercase tracking-widest" }, "Matched Skills"),
+                                        h('div', { className: "flex flex-wrap gap-2" },
+                                            result.ats_score.matched_skills?.length > 0 ? 
+                                            result.ats_score.matched_skills.map((s, i) => h('span', { key: i, className: "px-2.5 py-1 bg-emerald-900/30 text-emerald-400 border border-emerald-800 rounded text-xs font-medium" }, s)) :
+                                            h('span', { className: "text-slate-500 text-xs italic" }, "No exact matches found")
+                                        )
+                                    ),
+                                    h('div', { className: "glass-panel-dark rounded-2xl p-5" },
+                                        h('h3', { className: "font-bold text-rose-400 mb-4 text-xs uppercase tracking-widest" }, "Missing Keywords"),
+                                        h('div', { className: "flex flex-wrap gap-2" },
+                                            result.ats_score.missing_must_have?.length > 0 ? 
+                                            result.ats_score.missing_must_have.map((s, i) => h('span', { key: i, className: "px-2.5 py-1 bg-rose-900/30 text-rose-400 border border-rose-800 rounded text-xs font-medium" }, s)) :
+                                            h('span', { className: "text-slate-500 text-xs italic" }, "None missing")
+                                        )
+                                    )
+                                ),
+
+                                // 5. Action Plan
+                                h('div', { className: "glass-panel-dark rounded-2xl p-6 animate-slide-up delay-300" },
+                                    h('h3', { className: "font-bold text-slate-200 mb-5" }, "Improvement Action Plan"),
+                                    h('div', { className: "space-y-3" },
+                                        result.improvement_checklist.map((item, idx) => 
+                                            h('div', { key: idx, className: "flex items-start gap-3 p-3.5 bg-slate-800/40 rounded-xl border border-slate-700 hover:border-indigo-500/50 hover:bg-slate-800 transition-all" },
+                                                h('div', { className: "mt-1.5 w-2 h-2 rounded-full bg-indigo-400 shrink-0 shadow-[0_0_8px_#818cf8]" }),
+                                                h('span', { className: "text-sm text-slate-300 leading-relaxed" }, item)
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                    )
+                )
+            );
+        }
+
+        render(h(ATSInterface), document.getElementById('root'));
+    </script>
+</body>
+</html>
