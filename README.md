@@ -4,10 +4,16 @@
 
 **A production-ready multi-agent system that analyzes, scores, and provides actionable feedback on resumes against job descriptions — powered by 8 specialized AI agents.**
 
-[![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![spaCy](https://img.shields.io/badge/spaCy-09A3D5?logo=spacy&logoColor=white)](https://spacy.io)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![spaCy](https://img.shields.io/badge/spaCy-09A3D5?style=for-the-badge&logo=spacy&logoColor=white)](https://spacy.io)
+[![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+[![Jupyter](https://img.shields.io/badge/Jupyter-F37626?style=for-the-badge&logo=jupyter&logoColor=white)](https://jupyter.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+
+<img src="https://img.shields.io/badge/NLP-Powered-blueviolet?style=flat-square" alt="NLP Powered">
+<img src="https://img.shields.io/badge/Agents-8-ff6f61?style=flat-square" alt="8 Agents">
+<img src="https://img.shields.io/badge/Embeddings-Sentence--Transformers-orange?style=flat-square" alt="Sentence Transformers">
 
 </div>
 
@@ -23,15 +29,17 @@ The result: a comprehensive, fair, and explainable resume analysis report with a
 
 ## ✨ Key Features
 
-- **Multi-Agent Architecture** — 8 purpose-built agents collaborate through a structured pipeline
-- **Semantic Matching** — Goes beyond keywords using sentence embeddings (`all-MiniLM-L6-v2`) to catch synonym matches
-- **ATS Scoring** — Weighted scoring across skills, experience, and title similarity
-- **Format Validation** — Detects tables, columns, images, and icons that break ATS parsers
-- **Bias & Compliance** — Flags age, gender, and nationality indicators for ethical screening
-- **Actionable Feedback** — Generates rewritten bullet points and prioritized improvement checklists
-- **Visual Layout Analysis** — Uses `pdfplumber` to analyze spatial positioning of resume sections
-- **REST API** — Production-ready FastAPI endpoint with ngrok tunneling for deployment
-- **Web Interface** — React-based frontend for uploading resumes and viewing results
+| | Feature | Description |
+|:--:|---------|-------------|
+| 🧠 | **Multi-Agent Architecture** | 8 purpose-built agents collaborate through a structured pipeline |
+| 🔗 | **Semantic Matching** | Goes beyond keywords using sentence embeddings (`all-MiniLM-L6-v2`) to catch synonym matches |
+| 📈 | **ATS Scoring** | Weighted scoring across skills, experience, and title similarity |
+| 📐 | **Format Validation** | Detects tables, columns, images, and icons that break ATS parsers |
+| ⚖️ | **Bias & Compliance** | Flags age, gender, and nationality indicators for ethical screening |
+| ✍️ | **Actionable Feedback** | Generates rewritten bullet points and prioritized improvement checklists |
+| 👁️ | **Visual Layout Analysis** | Uses `pdfplumber` to analyze spatial positioning of resume sections |
+| ⚡ | **REST API** | Production-ready FastAPI endpoint with ngrok tunneling for deployment |
+| 🌐 | **Web Interface** | React-based frontend for uploading resumes and viewing results |
 
 ---
 
@@ -65,30 +73,30 @@ Job Description ─────┤         │
 
 ### Agent Breakdown
 
-| # | Agent | Type | Responsibility |
-|:-:|-------|------|----------------|
-| 1 | **CV Parsing Agent** | Extractor (Tool-augmented) | Extracts structured data (skills, experience, education) from PDF/DOCX/TXT resumes |
-| 2 | **JD Understanding Agent** | Semantic Analyst | Analyzes job postings to extract must-have / nice-to-have skills using NLP + knowledge base |
-| 3 | **ATS Scoring Agent** | Rule-Based Evaluator | Simulates traditional ATS keyword scoring with weighted sub-scores |
-| 4 | **Semantic Similarity Agent** | Semantic Reasoning | Uses sentence embeddings to find synonym & contextual matches beyond keywords |
-| 5 | **Formatting Validator Agent** | Validator / Inspector | Checks for ATS-unfriendly formatting (tables, columns, images, icons) |
-| 6 | **Bias & Compliance Agent** | Policy / Safety | Flags age, gender, and nationality info to ensure ethical screening |
-| 7 | **Feedback & Rewrite Agent** | Generative Coach | Provides actionable bullet-point suggestions and rewrites for missing skills |
-| 8 | **Orchestrator Agent** | Manager | Coordinates all agents, resolves conflicts, and produces the final report |
+| # | | Agent | Type | Responsibility |
+|:-:|:-:|-------|------|----------------|
+| 1 | 📄 | **CV Parsing Agent** | Extractor (Tool-augmented) | Extracts structured data (skills, experience, education) from PDF/DOCX/TXT resumes |
+| 2 | 🔍 | **JD Understanding Agent** | Semantic Analyst | Analyzes job postings to extract must-have / nice-to-have skills using NLP + knowledge base |
+| 3 | 🎯 | **ATS Scoring Agent** | Rule-Based Evaluator | Simulates traditional ATS keyword scoring with weighted sub-scores |
+| 4 | 🧬 | **Semantic Similarity Agent** | Semantic Reasoning | Uses sentence embeddings to find synonym & contextual matches beyond keywords |
+| 5 | 📐 | **Formatting Validator Agent** | Validator / Inspector | Checks for ATS-unfriendly formatting (tables, columns, images, icons) |
+| 6 | ⚖️ | **Bias & Compliance Agent** | Policy / Safety | Flags age, gender, and nationality info to ensure ethical screening |
+| 7 | ✍️ | **Feedback & Rewrite Agent** | Generative Coach | Provides actionable bullet-point suggestions and rewrites for missing skills |
+| 8 | 🎛️ | **Orchestrator Agent** | Manager | Coordinates all agents, resolves conflicts, and produces the final report |
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Category | Technology |
-|----------|-----------|
-| **NLP** | spaCy (`en_core_web_sm`) — tokenization, NER, POS tagging |
-| **Embeddings** | Sentence-Transformers (`all-MiniLM-L6-v2`) — 384-dim semantic vectors |
-| **PDF Parsing** | PyPDF2 + pdfplumber — text extraction and visual layout analysis |
-| **DOCX Parsing** | python-docx |
-| **API** | FastAPI + Uvicorn |
-| **Tunneling** | pyngrok (for public URL deployment) |
-| **Frontend** | React 18 + Tailwind CSS |
+| | Category | Technology |
+|:-:|----------|-----------|
+| <img src="https://img.shields.io/badge/-spaCy-09A3D5?style=flat-square&logo=spacy&logoColor=white"> | **NLP** | spaCy (`en_core_web_sm`) — tokenization, NER, POS tagging |
+| <img src="https://img.shields.io/badge/-HuggingFace-FFD21E?style=flat-square&logo=huggingface&logoColor=black"> | **Embeddings** | Sentence-Transformers (`all-MiniLM-L6-v2`) — 384-dim semantic vectors |
+| <img src="https://img.shields.io/badge/-PDF-EC1C24?style=flat-square&logo=adobe&logoColor=white"> | **PDF Parsing** | PyPDF2 + pdfplumber — text extraction and visual layout analysis |
+| <img src="https://img.shields.io/badge/-DOCX-2B579A?style=flat-square&logo=microsoftword&logoColor=white"> | **DOCX Parsing** | python-docx |
+| <img src="https://img.shields.io/badge/-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white"> | **API** | FastAPI + Uvicorn |
+| <img src="https://img.shields.io/badge/-ngrok-1F1E37?style=flat-square&logo=ngrok&logoColor=white"> | **Tunneling** | pyngrok (for public URL deployment) |
+| <img src="https://img.shields.io/badge/-React-61DAFB?style=flat-square&logo=react&logoColor=black"> | **Frontend** | React 18 + Tailwind CSS |
 
 ---
 
@@ -149,28 +157,28 @@ Multi-Agent-ATS-CV-Reviewer/
 
 The system produces a `FinalReport` containing:
 
-| Field | Description |
-|-------|-------------|
-| **Decision** | `PASS` / `BORDERLINE` / `REJECT` |
-| **Overall Score** | Weighted ATS score (0–100) |
-| **Skill Match Score** | Percentage of must-have skills matched |
-| **Missing Skills** | Critical skills not found in the CV |
-| **Semantic Similarity** | Cosine similarity between CV and JD embeddings |
-| **Format Issues** | ATS compatibility problems detected |
-| **Bias Flags** | Compliance issues (age, gender, nationality) |
-| **Improvement Checklist** | Prioritized, actionable suggestions |
+| | Field | Description |
+|:-:|-------|-------------|
+| ✅❌ | **Decision** | `PASS` / `BORDERLINE` / `REJECT` |
+| 💯 | **Overall Score** | Weighted ATS score (0–100) |
+| 🎯 | **Skill Match Score** | Percentage of must-have skills matched |
+| ⚠️ | **Missing Skills** | Critical skills not found in the CV |
+| 🔗 | **Semantic Similarity** | Cosine similarity between CV and JD embeddings |
+| 📐 | **Format Issues** | ATS compatibility problems detected |
+| 🚩 | **Bias Flags** | Compliance issues (age, gender, nationality) |
+| ✅ | **Improvement Checklist** | Prioritized, actionable suggestions |
 
 ---
 
 ## 🗺️ Roadmap
 
-- [ ] LLM integration (Claude / GPT) for richer feedback generation
-- [ ] Database storage for tracking candidate improvements over time
-- [ ] Batch processing for bulk resume screening
-- [ ] Industry-specific scoring models (Tech, Finance, Healthcare)
-- [ ] Multi-language resume support
-- [ ] Authentication & rate limiting for the API
-- [ ] CI/CD pipeline and comprehensive test suite
+- [ ] 🧠 LLM integration (Claude / GPT) for richer feedback generation
+- [ ] 🗄️ Database storage for tracking candidate improvements over time
+- [ ] 📦 Batch processing for bulk resume screening
+- [ ] 🏥 Industry-specific scoring models (Tech, Finance, Healthcare)
+- [ ] 🌍 Multi-language resume support
+- [ ] 🔐 Authentication & rate limiting for the API
+- [ ] 🔄 CI/CD pipeline and comprehensive test suite
 
 ---
 
@@ -178,11 +186,11 @@ The system produces a `FinalReport` containing:
 
 Contributions are welcome! Please open an issue first to discuss what you'd like to change, then submit a pull request.
 
-1. Fork the repo
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. 🍴 Fork the repo
+2. 🌿 Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. 💾 Commit your changes (`git commit -m 'Add amazing feature'`)
+4. 📤 Push to the branch (`git push origin feature/amazing-feature`)
+5. 🔀 Open a Pull Request
 
 ---
 
